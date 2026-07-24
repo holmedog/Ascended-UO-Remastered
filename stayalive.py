@@ -39,17 +39,15 @@ while not API.StopRequested:
 
     # Cure Poison (Self)
     if API.Player.IsPoisoned:
-        API.SysMsg("Casting Cure", 68)
         API.CastSpell(CURE_SPELL)
-        API.Pause(0.6)
+        API.WaitForTarget()
         API.TargetSelf()
         continue
 
     # Heal Self
     if hp_percent() <= HEAL_PERCENT:
-        API.SysMsg("Casting Greater Heal", 68)
         API.CastSpell(HEAL_SPELL)
-        API.Pause(0.6)
+        API.WaitForTarget()
         API.TargetSelf()
         continue
 
@@ -62,20 +60,27 @@ while not API.StopRequested:
             continue
 
         if pet.IsPoisoned:
-            API.SysMsg("Casting Cure on pet", 68)
             API.CastSpell(CURE_SPELL)
-            API.Pause(0.6)
+            API.WaitForTarget()
             API.Target(pet_serial)
             continue
 
         if mobile_hp_percent(pet) <= HEAL_PERCENT:
-            API.SysMsg("Casting Heal on pet", 68)
             API.CastSpell(HEAL_SPELL)
-            API.Pause(0.6)
+            API.WaitForTarget()
             API.Target(pet_serial)
             continue
 
-    API.Pause(CHECK_DELAY)
+    # Remove Curse
+    if (
+        API.BuffExists("Weaken")
+        or API.BuffExists("Clumsy")
+        or API.BuffExists("Feeblemind")
+        or API.BuffExists("Curse")
+    ):        
+        API.CastSpell("Remove Curse")
+        API.WaitForTarget()
+        API.TargetSelf()
 
 
 API.SysMsg("Smart Keep Alive Stopped")
