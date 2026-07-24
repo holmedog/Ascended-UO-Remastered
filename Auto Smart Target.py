@@ -8,7 +8,7 @@ import time
 SCAN_RANGE = 12
 use_hostile_outlines = True
 use_paragon_markers = True
-use_closest_target = True      # ← NEW TOGGLE: Set to True to use simple closest target
+use_closest_target = False      # ← NEW TOGGLE: Set to True to use simple closest target
 
 HUE_PARAGON = 1150
 seen_paragons = []
