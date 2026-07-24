@@ -1,0 +1,50 @@
+import API
+import time
+
+# ==========================================================
+# Buffs - Standalone Buff Maintenance
+# ==========================================================
+
+BUFF_CHECK_DELAY = 0.5
+CONSECRATE_DELAY = 7.0
+IMMOLATING_DELAY = 7.0
+HEAL_PERCENT = 95
+
+last_consecrate = 0
+last_immolating = 0
+
+def hp_percent():
+    if API.Player.HitsMax <= 0:
+        return 100
+    return (API.Player.Hits * 100.0) / API.Player.HitsMax
+
+
+API.SysMsg("Buffs Maintenance Started", 68)
+
+while not API.StopRequested:
+    API.ProcessCallbacks()
+    now = time.time()
+
+    # Secondary Ability (every loop)
+    if not API.SecondaryAbilityActive():
+        API.ToggleAbility("secondary")
+
+    # Consecrate Weapon
+    if now - last_consecrate >= CONSECRATE_DELAY:
+        if hp_percent() >= HEAL_PERCENT:
+            API.CastSpell("Consecrate Weapon")
+            last_consecrate = now
+            API.Pause(BUFF_CHECK_DELAY)
+        # else: skip but do NOT reset timer
+
+    # Immolating Weapon
+    if now - last_immolating >= IMMOLATING_DELAY:
+        if hp_percent() >= HEAL_PERCENT:
+            API.CastSpell("Immolating Weapon")
+            last_immolating = now            
+        # else: skip but do NOT reset timer
+
+    API.Pause(BUFF_CHECK_DELAY)
+
+
+API.SysMsg("Buffs Maintenance Stopped")
