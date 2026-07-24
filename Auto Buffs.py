@@ -5,9 +5,9 @@ import time
 # Buffs - Standalone Buff Maintenance
 # ==========================================================
 
-BUFF_CHECK_DELAY = 0.5
+BUFF_CHECK_DELAY = 0.35
 CONSECRATE_DELAY = 7.0
-IMMOLATING_DELAY = 7.0
+IMMOLATING_DELAY = 7.5
 HEAL_PERCENT = 95
 
 last_consecrate = 0
@@ -25,9 +25,13 @@ while not API.StopRequested:
     API.ProcessCallbacks()
     now = time.time()
 
+    # Primary Ability (every loop)
+    #if not API.PrimaryAbilityActive():
+    #    API.ToggleAbility("primary")
     # Secondary Ability (every loop)
-    if not API.SecondaryAbilityActive():
-        API.ToggleAbility("secondary")
+    #if not API.SecondaryAbilityActive():
+    #    API.ToggleAbility("secondary")
+    #API.CastSpell("Momentum Strike")
 
     # Consecrate Weapon
     if now - last_consecrate >= CONSECRATE_DELAY:

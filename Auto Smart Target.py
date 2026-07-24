@@ -6,32 +6,27 @@ import time
 # ==========================================================
 
 SCAN_RANGE = 12
-
 use_hostile_outlines = True
 use_paragon_markers = True
+use_closest_target = True      # ← NEW TOGGLE: Set to True to use simple closest target
 
 HUE_PARAGON = 1150
 seen_paragons = []
 current_target_serial = 0
 last_hostile_time = time.time()
 dormant = False
-last_loop_time = time.time()   # For loop timing debug
-
 
 def is_valid_mobile(mobile):
     return mobile and not getattr(mobile, 'IsDead', True)
-
 
 def choose_enemy_from_hostiles(hostiles):
     elite_paragon = None
     elite_only = None
     paragon_only = None
     nearest_other = None
-
     for m in hostiles:
         if not is_valid_mobile(m):
             continue
-
         nm = m.Name.lower() if m.Name else ""
         is_para = "paragon" in nm
         is_elite = "elite" in nm
@@ -69,7 +64,6 @@ def choose_enemy_from_hostiles(hostiles):
     best = elite_paragon or elite_only or paragon_only or nearest_other
     return best
 
-
 API.SysMsg("Smart Target Selector Started", 68)
 
 while not API.StopRequested:
@@ -81,7 +75,6 @@ while not API.StopRequested:
         enemy = API.FindMobile(current_target_serial)
         if is_valid_mobile(enemy):
             API.Attack(enemy.Serial)
-            API.Pause(0.3)
             continue
 
     # Scan for new targets
@@ -97,15 +90,26 @@ while not API.StopRequested:
     else:
         if now - last_hostile_time >= 8:
             dormant = True
-        API.Pause(0.4)
         continue
 
-    enemy = choose_enemy_from_hostiles(hostiles)
+    # === NEW LOGIC WITH TOGGLE ===
+    if use_closest_target:
+        # Simple closest target (your requested snippet)
+        enemy = API.NearestMobile(
+            [
+                API.Notoriety.Gray,
+                API.Notoriety.Criminal,
+                API.Notoriety.Murderer,
+                API.Notoriety.Enemy
+            ],
+            7
+        )
+    else:
+        # Original smart priority system
+        enemy = choose_enemy_from_hostiles(hostiles)
 
     if enemy:
         current_target_serial = enemy.Serial
         API.Attack(enemy.Serial)
-
-    API.Pause(0.3)
 
 API.SysMsg("Smart Target Selector Stopped")
