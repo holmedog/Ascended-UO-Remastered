@@ -16,23 +16,42 @@ ROAM = True
 DIRECTIONS = ["north", "northeast", "east", "southeast",
               "south", "southwest", "west", "northwest"]
 current_target_serial = 0
-move_mode = "idle"          # chase / melee / roam / idle
+move_mode = "idle" # chase / melee / roam / idle
 roam_target = None
 last_roam_dir = None
 last_pos = (0, 0)
 last_move_time = time.time()
-unreachable = {}            # serial -> time we can try it again
+unreachable = {} # serial -> time we can try it again
 # tiny RNG so we don't depend on the random module
 _seed = int(time.time()) & 0x7FFFFFFF
-
 # ==========================================================
 # Defs
 # ==========================================================
-
 def rnd(n):
     global _seed
     _seed = (_seed * 1103515245 + 12345) & 0x7FFFFFFF
     return _seed % n
+
+def dir_to_target(tx, ty):
+    """Return 0-7 direction index toward (tx, ty) from player."""
+    dx = tx - API.Player.X
+    dy = ty - API.Player.Y
+    if dx == 0 and dy == 0:
+        return last_roam_dir if last_roam_dir is not None else 0
+
+    adx = abs(dx)
+    ady = abs(dy)
+    # Prefer cardinal if one axis dominates a lot, otherwise diagonal
+    if adx > ady * 2:          # mostly east/west
+        return 2 if dx > 0 else 6
+    if ady > adx * 2:          # mostly north/south
+        return 0 if dy < 0 else 4
+    # diagonal
+    if dx > 0 and dy < 0: return 1   # NE
+    if dx > 0 and dy > 0: return 3   # SE
+    if dx < 0 and dy > 0: return 5   # SW
+    return 7                         # NW
+
 def roam_point():
     global last_roam_dir
     # Rarely change direction (keeps long straight legs). 15% chance of full new direction.
@@ -42,13 +61,15 @@ def roam_point():
         # Tiny deviation so it is not perfectly locked forever
         last_roam_dir = (last_roam_dir + rnd(3) - 1) % 8
     # Longer legs = straighter travel
-    dist = 16 + rnd(10)   # 16-25 tiles
+    dist = 16 + rnd(10) # 16-25 tiles
     # 0=N, 1=NE, 2=E, 3=SE, 4=S, 5=SW, 6=W, 7=NW
-    dx = [ 0,  1, 1, 1, 0, -1, -1, -1][last_roam_dir] * dist
-    dy = [-1, -1, 0, 1, 1,  1,  0, -1][last_roam_dir] * dist
+    dx = [ 0, 1, 1, 1, 0, -1, -1, -1][last_roam_dir] * dist
+    dy = [-1, -1, 0, 1, 1, 1, 0, -1][last_roam_dir] * dist
     return (API.Player.X + dx, API.Player.Y + dy)
+
 def near_point(tx, ty):
     return abs(API.Player.X - tx) <= 1 and abs(API.Player.Y - ty) <= 1
+
 def is_blacklisted(serial):
     exp = unreachable.get(serial)
     if exp is None:
@@ -57,13 +78,11 @@ def is_blacklisted(serial):
         del unreachable[serial]
         return False
     return True
+
 API.SysMsg("Lone Wolf Hunt online", 1150)
-
-
 # ==========================================================
 # Main Loop
 # ==========================================================
-
 while not API.StopRequested:
     API.ProcessCallbacks()
     now = time.time()
@@ -141,6 +160,7 @@ while not API.StopRequested:
     # ----------------------------------
     # Movement
     # ----------------------------------
+    API.Msg("[grab")
     if enemy and enemy.Distance > MELEE_RANGE:
         desired = "chase"
     elif enemy:
@@ -173,6 +193,9 @@ while not API.StopRequested:
     elif desired == "chase":
         if not API.Pathfinding():
             API.PathfindEntity(enemy.Serial, MELEE_RANGE, False)
+        # Keep roam heading roughly the same way we were chasing
+        if enemy.Distance > MELEE_RANGE + 1:
+            last_roam_dir = dir_to_target(enemy.X, enemy.Y)
     elif desired == "roam":
         if roam_target is None or near_point(roam_target[0], roam_target[1]) or not API.Pathfinding():
             roam_target = roam_point()
@@ -187,4 +210,6 @@ while not API.StopRequested:
         API.Attack(enemy.Serial)
     if not API.PrimaryAbilityActive():
         API.ToggleAbility("primary")
+       
+       
 API.SysMsg("Lone Wolf Hunt offline", 1150)
