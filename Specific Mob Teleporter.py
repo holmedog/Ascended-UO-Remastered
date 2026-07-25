@@ -6,13 +6,13 @@ import time
 # ==========================================================
 TARGET_NAME = "Seraphi"       # case-insensitive partial match
 SCAN_RANGE = 18
-MELEE_RANGE = 8
+MELEE_RANGE = 6
 TELEPORT_COOLDOWN = 1.0       # seconds between cast attempts
 MAX_OFFSET = 6                # stop increasing past this
 # ==========================================================
 
 last_teleport = 0.0
-teleport_offset = 1
+teleport_offset = .6
 target_lower = TARGET_NAME.lower()
 
 OFFSET_RING = [
@@ -25,13 +25,20 @@ BLOCKED_MSGS = [
     "That is too far away",
 ]
 
+def clamp_coord(v):
+    """Keep coordinate in valid UInt16 range."""
+    if v < 0:
+        return 0
+    if v > 65535:
+        return 65535
+    return int(v)
+
 API.SysMsg(f"Hunting: {TARGET_NAME}", 1150)
 
 while not API.StopRequested:
     API.ProcessCallbacks()
     now = time.time()
 
-    # Blocked / too far → bump offset and retry
     if API.InJournalAny(BLOCKED_MSGS, clearMatches=True):
         teleport_offset = min(teleport_offset + 1, MAX_OFFSET)
         API.SysMsg(f"Bad teleport tile – offset now {teleport_offset}", 53)
@@ -65,9 +72,13 @@ while not API.StopRequested:
                 dx *= teleport_offset
                 dy *= teleport_offset
 
+                tx = clamp_coord(target.X + dx)
+                ty = clamp_coord(target.Y + dy)
+                tz = int(target.Z)
+
                 API.CastSpell("Teleport")
                 if API.WaitForTarget("any", 2.0):
-                    API.Target(target.X + dx, target.Y + dy, target.Z)
+                    API.Target(tx, ty, tz)
                 last_teleport = now
         else:
             teleport_offset = 1
