@@ -7,11 +7,13 @@ import time
 
 BUFF_CHECK_DELAY = 0.35
 CONSECRATE_DELAY = 7.0
+BLESS_DELAY = 35.0
 IMMOLATING_DELAY = 7.5
 HEAL_PERCENT = 95
 
 last_consecrate = 0
 last_immolating = 0
+last_bless = 0
 
 def hp_percent():
     if API.Player.HitsMax <= 0:
@@ -41,11 +43,20 @@ while not API.StopRequested:
             API.Pause(BUFF_CHECK_DELAY)
         # else: skip but do NOT reset timer
 
+    # Bless
+    if now - last_bless >= BLESS_DELAY:
+        if hp_percent() >= HEAL_PERCENT:
+            API.CastSpell("Bless")
+            API.WaitForTarget()
+            API.TargetSelf()
+            last_bless = now             
+        # else: skip but do NOT reset timer
+
     # Immolating Weapon
     if now - last_immolating >= IMMOLATING_DELAY:
         if hp_percent() >= HEAL_PERCENT:
             API.CastSpell("Immolating Weapon")
-            last_immolating = now            
+            last_immolating = now           
         # else: skip but do NOT reset timer
 
     API.Pause(BUFF_CHECK_DELAY)
