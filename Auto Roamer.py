@@ -12,7 +12,7 @@ import time
 # ==========================================================
 SCAN_RANGE = 12
 ROAM_RANGE = 12
-MELEE_RANGE = 3
+MELEE_RANGE = 1
 LOOP_DELAY = 0.20
 STUCK_TIME = 2.5
 BLACKLIST_TIME = 30

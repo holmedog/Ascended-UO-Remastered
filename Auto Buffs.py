@@ -58,6 +58,18 @@ while not API.StopRequested:
             API.CastSpell("Immolating Weapon")
             last_immolating = now           
         # else: skip but do NOT reset timer
+        
+        
+    # Remove Curse
+    if (
+        API.BuffExists("Weaken")
+        or API.BuffExists("Clumsy")
+        or API.BuffExists("Feeblemind")
+        or API.BuffExists("Curse")
+    ):        
+        API.CastSpell("Remove Curse")
+        API.WaitForTarget()
+        API.TargetSelf()
 
     API.Pause(BUFF_CHECK_DELAY)
 

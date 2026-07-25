@@ -6,9 +6,9 @@ import time
 # ==========================================================
 TARGET_NAME = "Seraphi"       # case-insensitive partial match
 SCAN_RANGE = 18
-MELEE_RANGE = 6
+MELEE_RANGE = 1
 TELEPORT_COOLDOWN = 1.0       # seconds between cast attempts
-MAX_OFFSET = 6                # stop increasing past this
+MAX_OFFSET = 10                # stop increasing past this
 # ==========================================================
 
 last_teleport = 0.0

@@ -5,22 +5,21 @@ import time
 # Waypoints (x, y, z) – ends back at start, then idles & repeats
 # ==========================================================
 WAYPOINTS = [
-    (5845, 927, -20),
-    (5845, 915, -20),
+    (5845, 917, -20),
+    (5833, 917, -20),
+    (5833, 927, -20),
+    (5833, 940, -20),
     (5845, 940, -20),
-    (5832, 927, -20),
-    (5832, 915, -20),
-    (5832, 940, -20),
-    (5851, 927, -20),
-    (5859, 927, -20),
+    (5845, 927, -20),  
+    (5859, 927, -20), 
     (5845, 927, -20),  # return home
 ]
 
 ARRIVE_DIST = 2
 STEP_DIST = 10
 LOOP_DELAY = 0.25
-STUCK_TIME = 2.5
-IDLE_SECONDS = 15
+STUCK_TIME = 1.5
+IDLE_SECONDS = 20
 MAX_STUCK_RETRIES = 6
 
 DIRECTIONS = ["north", "northeast", "east", "southeast",
