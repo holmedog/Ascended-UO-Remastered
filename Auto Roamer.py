@@ -12,12 +12,12 @@ import time
 # - Pathfinding continues to the original chase target
 # ==========================================================
 
-MAX_DIST = 16 
-MIN_DIST = 8
+MAX_DIST = 8 
+MIN_DIST = 3
 
 SCAN_RANGE = 12
 ROAM_RANGE = 12
-ROAM_VARIANCE = 5 # This is a percent; it's how often you want to chance changing directions without hitting walls
+ROAM_VARIANCE = 2 # This is a percent; it's how often you want to chance changing directions without hitting walls
 MELEE_RANGE = 1
 LOOP_DELAY = 0.20
 STUCK_TIME = 2.5
