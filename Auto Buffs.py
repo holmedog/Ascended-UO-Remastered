@@ -9,10 +9,12 @@ BUFF_CHECK_DELAY = 0.35
 CONSECRATE_DELAY = 7.0
 BLESS_DELAY = 35.0
 IMMOLATING_DELAY = 7.5
+BO_DELAY = 10
 HEAL_PERCENT = 95
 
 last_consecrate = 0
 last_immolating = 0
+last_bo = 0
 last_bless = 0
 
 def hp_percent():
@@ -57,6 +59,15 @@ while not API.StopRequested:
         if hp_percent() >= HEAL_PERCENT:
             API.CastSpell("Immolating Weapon")
             last_immolating = now           
+        # else: skip but do NOT reset timer
+
+    # Blood Oath
+    if now - last_bo >= BO_DELAY:
+        if hp_percent() >= HEAL_PERCENT:
+            API.CastSpell("Blood Oath")
+            API.WaitForTarget()
+            API.TargetSelf()
+            last_bo = now           
         # else: skip but do NOT reset timer
         
         

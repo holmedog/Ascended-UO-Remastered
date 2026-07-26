@@ -19,9 +19,10 @@ WAYPOINTS = [
 
 ARRIVE_DIST = 2
 STEP_DIST = 10
-LOOP_DELAY = 0.25
+LOOP_DELAY = 1
 STUCK_TIME = 1.5
-IDLE_SECONDS = 20
+STAY_TIME = 1
+IDLE_SECONDS = 10
 MAX_STUCK_RETRIES = 6
 
 DIRECTIONS = ["north", "northeast", "east", "southeast",
@@ -95,7 +96,9 @@ while not API.StopRequested:
 
     tx, ty, tz = WAYPOINTS[wp_index]
 
-    if near(tx, ty):
+    if near(tx, ty):        
+        API.CastSpell("chain lightning")
+        API.Pause(STAY_TIME)
         API.SysMsg(f"Reached waypoint {wp_index + 1}/{len(WAYPOINTS)}", 68)
         wp_index += 1
         stuck_count = 0
