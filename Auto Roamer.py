@@ -14,11 +14,11 @@ import time
 
 MAX_DIST = 8 
 MIN_DIST = 3
+MELEE_RANGE = 1
 
 SCAN_RANGE = 12
 ROAM_RANGE = 12
 ROAM_VARIANCE = 2 # This is a percent; it's how often you want to chance changing directions without hitting walls
-MELEE_RANGE = 3
 LOOP_DELAY = 0.20
 STUCK_TIME = 2.5
 BLACKLIST_TIME = 30
