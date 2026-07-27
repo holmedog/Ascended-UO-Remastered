@@ -2,29 +2,42 @@ import API
 import time
 
 # ==========================================================
-# Waypoints (x, y, z) – ends back at start, then idles & repeats
+# Load waypoints from file
 # ==========================================================
-WAYPOINTS = [
-    (5844, 917, -20),
-    (5834, 917, -20),
-    (5833, 927, -20),
-    (5834, 940, -20),
-    (5833, 927, -20),
-    (5845, 927, -20),  
-    (5844, 940, -20),
-    (5845, 927, -20),  
-    (5859, 927, -20), 
-    (5845, 927, -20),  # return home
-]
+def load_waypoints(path):
+    points = []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip().rstrip(",")
+                if not line or not line.startswith("("):
+                    continue
+                # Expected format: (x, y, z)
+                coords = line[1:-1].split(",")
+                if len(coords) == 3:
+                    x = int(coords[0].strip())
+                    y = int(coords[1].strip())
+                    z = int(coords[2].strip())
+                    points.append((x, y, z))
+    except Exception as e:
+        API.SysMsg(f"Failed to load waypoints: {e}", 33)
+        return []
+    return points
+
+WAYPOINTS = load_waypoints(API.ScriptPath + "/waypoints.txt")
+
+if not WAYPOINTS:
+    API.SysMsg("No waypoints found in waypoints.txt – stopping", 33)
+    # Script will just exit after this
 
 ARRIVE_DIST = 2
+CAST_SPELL = False #turn to True to cast Chain Lightning at each stop
 STEP_DIST = 10
 LOOP_DELAY = 1
 STUCK_TIME = 1.5
-STAY_TIME = 1
-IDLE_SECONDS = 10
+STAY_TIME = 0 #This is how long we want to pause at each spot.  Set to 0 to not stop at all.  You might want to stop to gain aggro 
+IDLE_SECONDS = 3
 MAX_STUCK_RETRIES = 6
-
 DIRECTIONS = ["north", "northeast", "east", "southeast",
               "south", "southwest", "west", "northwest"]
 OFFSETS = [
@@ -39,7 +52,6 @@ stuck_count = 0
 offset_idx = 0
 last_pos = (API.Player.X, API.Player.Y)
 last_move_time = time.time()
-
 _seed = int(time.time()) & 0x7FFFFFFF
 
 def rnd(n):
@@ -58,12 +70,10 @@ def step_toward(tx, ty, tz):
     ox, oy = OFFSETS[offset_idx % len(OFFSETS)]
     goal_x = tx + ox
     goal_y = ty + oy
-
     d = dist_to(goal_x, goal_y)
     if d <= STEP_DIST:
         API.Pathfind(goal_x, goal_y, tz, 0, False)
         return
-
     px, py = API.Player.X, API.Player.Y
     ratio = STEP_DIST / float(d)
     mx = int(px + (goal_x - px) * ratio)
@@ -75,7 +85,7 @@ def step_toward(tx, ty, tz):
 
 API.SysMsg(f"Waypoint run started ({len(WAYPOINTS)} points)", 1150)
 
-while not API.StopRequested:
+while not API.StopRequested and WAYPOINTS:
     API.ProcessCallbacks()
     now = time.time()
 
@@ -86,7 +96,7 @@ while not API.StopRequested:
         idle_end = time.time() + IDLE_SECONDS
         while not API.StopRequested and time.time() < idle_end:
             API.ProcessCallbacks()
-            time.sleep(0.25)
+            time.sleep(0.05)
         wp_index = 0
         stuck_count = 0
         offset_idx = 0
@@ -96,9 +106,11 @@ while not API.StopRequested:
 
     tx, ty, tz = WAYPOINTS[wp_index]
 
-    if near(tx, ty):        
-        API.CastSpell("chain lightning")
-        API.Pause(STAY_TIME)
+    if near(tx, ty):
+        if CAST_SPELL:
+            API.CastSpell("chain lightning")
+        if STAY_TIME > 0:
+            API.Pause(STAY_TIME)
         API.SysMsg(f"Reached waypoint {wp_index + 1}/{len(WAYPOINTS)}", 68)
         wp_index += 1
         stuck_count = 0
@@ -117,18 +129,14 @@ while not API.StopRequested:
     if now - last_move_time >= STUCK_TIME:
         stuck_count += 1
         API.SysMsg(f"Stuck at {pos[0]},{pos[1]} – recovery {stuck_count}", 53)
-
         if API.Pathfinding():
             API.CancelPathfinding()
-
         # Physical shove off the blocked tile
         API.Run(DIRECTIONS[rnd(8)])
-        time.sleep(0.3)
-
+        time.sleep(0.1)
         # Try a different approach angle next pathfind
         offset_idx += 1
         last_move_time = time.time()
-
         # Give up on this waypoint after too many failures
         if stuck_count >= MAX_STUCK_RETRIES:
             API.SysMsg(f"Skipping waypoint {wp_index + 1} – unreachable", 33)
