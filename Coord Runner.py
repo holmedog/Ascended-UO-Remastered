@@ -2,8 +2,39 @@ import API
 import time
 
 # ==========================================================
-# Load waypoints from file
+# Options (edit these)
 # ==========================================================
+ARRIVE_DIST = 2
+CAST_SPELL = False          # True = cast Chain Lightning at each stop
+STEP_DIST = 16              # If steps are over this it might try to go half steps
+LOOP_DELAY = .05
+STUCK_TIME = 1.5
+STAY_TIME = 0               # pause at each waypoint (0 = no stop)
+IDLE_SECONDS = 1
+MAX_STUCK_RETRIES = 6
+
+# Hostile scan
+SCAN_HOSTILES = True
+SCAN_RANGE = 8
+
+
+#Hostil Notos
+HOSTILE_NOTORIETIES = [
+    API.Notoriety.Gray,
+    API.Notoriety.Criminal,
+    API.Notoriety.Enemy,
+    API.Notoriety.Murderer,
+]
+
+DIRECTIONS = ["north", "northeast", "east", "southeast",
+              "south", "southwest", "west", "northwest"]
+OFFSETS = [
+    (0, 0), (1, 0), (-1, 0), (0, 1), (0, -1),
+    (1, 1), (1, -1), (-1, 1), (-1, -1),
+    (2, 0), (-2, 0), (0, 2), (0, -2),
+]
+# ==========================================================
+
 def load_waypoints(path):
     points = []
     try:
@@ -12,7 +43,6 @@ def load_waypoints(path):
                 line = line.strip().rstrip(",")
                 if not line or not line.startswith("("):
                     continue
-                # Expected format: (x, y, z)
                 coords = line[1:-1].split(",")
                 if len(coords) == 3:
                     x = int(coords[0].strip())
@@ -28,24 +58,6 @@ WAYPOINTS = load_waypoints(API.ScriptPath + "/waypoints.txt")
 
 if not WAYPOINTS:
     API.SysMsg("No waypoints found in waypoints.txt – stopping", 33)
-    # Script will just exit after this
-
-ARRIVE_DIST = 2
-CAST_SPELL = False #turn to True to cast Chain Lightning at each stop
-STEP_DIST = 10
-LOOP_DELAY = 1
-STUCK_TIME = 1.5
-STAY_TIME = 0 #This is how long we want to pause at each spot.  Set to 0 to not stop at all.  You might want to stop to gain aggro 
-IDLE_SECONDS = 3
-MAX_STUCK_RETRIES = 6
-DIRECTIONS = ["north", "northeast", "east", "southeast",
-              "south", "southwest", "west", "northwest"]
-OFFSETS = [
-    (0, 0), (1, 0), (-1, 0), (0, 1), (0, -1),
-    (1, 1), (1, -1), (-1, 1), (-1, -1),
-    (2, 0), (-2, 0), (0, 2), (0, -2),
-]
-# ==========================================================
 
 wp_index = 0
 stuck_count = 0
@@ -53,6 +65,7 @@ offset_idx = 0
 last_pos = (API.Player.X, API.Player.Y)
 last_move_time = time.time()
 _seed = int(time.time()) & 0x7FFFFFFF
+was_waiting_for_clear = False
 
 def rnd(n):
     global _seed
@@ -78,17 +91,40 @@ def step_toward(tx, ty, tz):
     ratio = STEP_DIST / float(d)
     mx = int(px + (goal_x - px) * ratio)
     my = int(py + (goal_y - py) * ratio)
-    # Nudge mid-point too so we don't always hit the same blocked tile
     mx += ox
     my += oy
     API.Pathfind(mx, my, tz, 0, False)
 
+def has_hostile_nearby():
+    if not SCAN_HOSTILES:
+        return False
+    enemy = API.NearestMobile(HOSTILE_NOTORIETIES, SCAN_RANGE)
+    return enemy is not None
+
 API.SysMsg(f"Waypoint run started ({len(WAYPOINTS)} points)", 1150)
+if SCAN_HOSTILES:
+    API.SysMsg(f"Hostile scan ON – range {SCAN_RANGE}", 68)
 
 while not API.StopRequested and WAYPOINTS:
     API.ProcessCallbacks()
     now = time.time()
 
+    # ----- Hostile check -----
+    if has_hostile_nearby():
+        if API.Pathfinding():
+            API.CancelPathfinding()
+        if not was_waiting_for_clear:
+            API.SysMsg("Hostile detected – holding position", 33)
+            was_waiting_for_clear = True
+        time.sleep(0.5)
+        continue
+    else:
+        if was_waiting_for_clear:
+            API.SysMsg("Area clear – resuming route", 68)
+            was_waiting_for_clear = False
+            last_move_time = time.time()
+
+    # ----- Route finished → idle & restart -----
     if wp_index >= len(WAYPOINTS):
         if API.Pathfinding():
             API.CancelPathfinding()
@@ -96,6 +132,8 @@ while not API.StopRequested and WAYPOINTS:
         idle_end = time.time() + IDLE_SECONDS
         while not API.StopRequested and time.time() < idle_end:
             API.ProcessCallbacks()
+            if has_hostile_nearby():
+                break
             time.sleep(0.05)
         wp_index = 0
         stuck_count = 0
@@ -106,6 +144,7 @@ while not API.StopRequested and WAYPOINTS:
 
     tx, ty, tz = WAYPOINTS[wp_index]
 
+    # ----- Arrived at waypoint -----
     if near(tx, ty):
         if CAST_SPELL:
             API.CastSpell("chain lightning")
@@ -120,6 +159,7 @@ while not API.StopRequested and WAYPOINTS:
         last_move_time = now
         continue
 
+    # ----- Movement / stuck detection -----
     pos = (API.Player.X, API.Player.Y)
     if pos != last_pos:
         last_pos = pos
@@ -131,13 +171,10 @@ while not API.StopRequested and WAYPOINTS:
         API.SysMsg(f"Stuck at {pos[0]},{pos[1]} – recovery {stuck_count}", 53)
         if API.Pathfinding():
             API.CancelPathfinding()
-        # Physical shove off the blocked tile
         API.Run(DIRECTIONS[rnd(8)])
         time.sleep(0.1)
-        # Try a different approach angle next pathfind
         offset_idx += 1
         last_move_time = time.time()
-        # Give up on this waypoint after too many failures
         if stuck_count >= MAX_STUCK_RETRIES:
             API.SysMsg(f"Skipping waypoint {wp_index + 1} – unreachable", 33)
             wp_index += 1
