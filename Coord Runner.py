@@ -15,7 +15,7 @@ MAX_STUCK_RETRIES = 6       # Failure condition setup
 
 # Hostile scan
 SCAN_HOSTILES = True       # Stop if we see hostiles (better for full clears)
-SCAN_RANGE = 8             # Range to scan hostiles
+SCAN_RANGE = 6             # Range to scan hostiles
 
 #Hostil Notos
 HOSTILE_NOTORIETIES = [
