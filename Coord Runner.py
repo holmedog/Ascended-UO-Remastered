@@ -4,19 +4,18 @@ import time
 # ==========================================================
 # Options (edit these)
 # ==========================================================
-ARRIVE_DIST = 2
+ARRIVE_DIST = 2             #Determines when you consider to be at the waypoint and look for the next; speeds stuff up
 CAST_SPELL = False          # True = cast Chain Lightning at each stop
 STEP_DIST = 16              # If steps are over this it might try to go half steps
-LOOP_DELAY = .05
-STUCK_TIME = 1.5
+LOOP_DELAY = .05            # Time between pathing attempts to throttle it a tiny bit
+STUCK_TIME = 1.5            # How long to see if we're stuck and should try a new waypoint
 STAY_TIME = 0               # pause at each waypoint (0 = no stop)
-IDLE_SECONDS = 1
-MAX_STUCK_RETRIES = 6
+IDLE_SECONDS = 1            # Time to stop when we hit the end of the waypoint list
+MAX_STUCK_RETRIES = 6       # Failure condition setup
 
 # Hostile scan
-SCAN_HOSTILES = True
-SCAN_RANGE = 8
-
+SCAN_HOSTILES = True       # Stop if we see hostiles (better for full clears)
+SCAN_RANGE = 8             # Range to scan hostiles
 
 #Hostil Notos
 HOSTILE_NOTORIETIES = [
