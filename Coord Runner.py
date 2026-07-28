@@ -12,10 +12,11 @@ STUCK_TIME = 1.5            # How long to see if we're stuck and should try a ne
 STAY_TIME = 0               # pause at each waypoint (0 = no stop)
 IDLE_SECONDS = 1            # Time to stop when we hit the end of the waypoint list
 MAX_STUCK_RETRIES = 6       # Failure condition setup
+GRAB_DELAY = 2              # How often we use the [grab command
 
 # Hostile scan
 SCAN_HOSTILES = True       # Stop if we see hostiles (better for full clears)
-SCAN_RANGE = 6             # Range to scan hostiles
+SCAN_RANGE = 3             # Range to scan hostiles
 
 #Hostil Notos
 HOSTILE_NOTORIETIES = [
@@ -63,6 +64,7 @@ stuck_count = 0
 offset_idx = 0
 last_pos = (API.Player.X, API.Player.Y)
 last_move_time = time.time()
+last_grab_time = time.time()
 _seed = int(time.time()) & 0x7FFFFFFF
 was_waiting_for_clear = False
 
@@ -107,6 +109,11 @@ if SCAN_HOSTILES:
 while not API.StopRequested and WAYPOINTS:
     API.ProcessCallbacks()
     now = time.time()
+    
+    
+    if now - last_grab_time >= GRAB_DELAY:
+        API.Msg("[grab")
+        last_grab_time = time.time()
 
     # ----- Hostile check -----
     if has_hostile_nearby():
