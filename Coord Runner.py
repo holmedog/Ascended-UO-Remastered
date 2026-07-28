@@ -10,12 +10,14 @@ STEP_DIST = 16              # If steps are over this it might try to go half ste
 LOOP_DELAY = .05            # Time between pathing attempts to throttle it a tiny bit
 STUCK_TIME = 1.5            # How long to see if we're stuck and should try a new waypoint
 STAY_TIME = 0               # pause at each waypoint (0 = no stop)
-IDLE_SECONDS = 1            # Time to stop when we hit the end of the waypoint list
+IDLE_SECONDS = 8            # Time to stop when we hit the end of the waypoint list
 MAX_STUCK_RETRIES = 6       # Failure condition setup
 GRAB_DELAY = 2              # How often we use the [grab command
+PULL_PETS = True            # Pull pets at end of loop
+ball_serial = 0x403930A3    # This is the serial of our summoning stone
 
 # Hostile scan
-SCAN_HOSTILES = True       # Stop if we see hostiles (better for full clears)
+SCAN_HOSTILES = False       # Stop if we see hostiles (better for full clears)
 SCAN_RANGE = 3             # Range to scan hostiles
 
 #Hostil Notos
@@ -110,6 +112,8 @@ while not API.StopRequested and WAYPOINTS:
     API.ProcessCallbacks()
     now = time.time()
     
+
+    
     
     if now - last_grab_time >= GRAB_DELAY:
         API.Msg("[grab")
@@ -135,6 +139,12 @@ while not API.StopRequested and WAYPOINTS:
         if API.Pathfinding():
             API.CancelPathfinding()
         API.SysMsg(f"Route complete – idling {IDLE_SECONDS}s", 68)
+        
+        #Pull pets 
+        if PULL_PETS:
+            API.UseType(0xe2e, 2000)
+            API.Pause(1)
+            API.Msg("all guard me")
         idle_end = time.time() + IDLE_SECONDS
         while not API.StopRequested and time.time() < idle_end:
             API.ProcessCallbacks()

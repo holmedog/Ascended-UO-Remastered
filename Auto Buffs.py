@@ -30,11 +30,14 @@ while not API.StopRequested:
     now = time.time()
 
     # Primary Ability (every loop)
-    if not API.PrimaryAbilityActive():
-        API.ToggleAbility("primary")
+    #if not API.PrimaryAbilityActive():
+    #    API.ToggleAbility("primary")
+    
     # Secondary Ability (every loop)
-    #if not API.SecondaryAbilityActive():
-    #    API.ToggleAbility("secondary")
+    if not API.SecondaryAbilityActive():
+        API.ToggleAbility("secondary")
+    
+    #Momentum
     #API.CastSpell("Momentum Strike")
 
     # Consecrate Weapon
