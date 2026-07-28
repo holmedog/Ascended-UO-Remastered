@@ -6,11 +6,11 @@ import time
 # ==========================================================
 
 BUFF_CHECK_DELAY = 0.35
-CONSECRATE_DELAY = 7.0
-BLESS_DELAY = 35.0
-IMMOLATING_DELAY = 7.5
+CONSECRATE_DELAY = 67.0
+BLESS_DELAY = 60.0
+IMMOLATING_DELAY = 67.5
 BO_DELAY = 10
-HEAL_PERCENT = 95
+HEAL_PERCENT = 65
 
 last_consecrate = 0
 last_immolating = 0
