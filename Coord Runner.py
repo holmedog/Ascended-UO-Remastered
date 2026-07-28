@@ -4,23 +4,24 @@ import time
 # ==========================================================
 # Options (edit these)
 # ==========================================================
-ARRIVE_DIST = 2             #Determines when you consider to be at the waypoint and look for the next; speeds stuff up
-CAST_SPELL = False          # True = cast Chain Lightning at each stop
-STEP_DIST = 16              # If steps are over this it might try to go half steps
-LOOP_DELAY = .05            # Time between pathing attempts to throttle it a tiny bit
-STUCK_TIME = 1.5            # How long to see if we're stuck and should try a new waypoint
-STAY_TIME = 0               # pause at each waypoint (0 = no stop)
-IDLE_SECONDS = 8            # Time to stop when we hit the end of the waypoint list
-MAX_STUCK_RETRIES = 6       # Failure condition setup
-GRAB_DELAY = 2              # How often we use the [grab command
-PULL_PETS = True            # Pull pets at end of loop
-ball_serial = 0x403930A3    # This is the serial of our summoning stone
+ARRIVE_DIST = 2            # when you consider yourself at the waypoint
+CAST_SPELL = False         # True = cast Chain Lightning at each stop
+STEP_DIST = 16             # if farther than this, take a mid-step
+LOOP_DELAY = 0.05          # throttle between pathing attempts
+STUCK_TIME = 1.5           # how long before considering yourself stuck
+STAY_TIME = 0              # pause at each waypoint (0 = no stop)
+IDLE_SECONDS = 8           # idle time at end of route
+MAX_STUCK_RETRIES = 6
+GRAB_DELAY = 2             # how often to send [grab
+SCAN_HOSTILES = True      #Stop on hostiles within SCAN_RANGE
+SCAN_RANGE = 3
 
-# Hostile scan
-SCAN_HOSTILES = False       # Stop if we see hostiles (better for full clears)
-SCAN_RANGE = 3             # Range to scan hostiles
+PULL_PETS_MODE = "hostile"
+# Pull followers mode:
+#   "end"     → only at the end of the route
+#   "hostile" → when a hostile is detected
+#   "never"   → disabled
 
-#Hostil Notos
 HOSTILE_NOTORIETIES = [
     API.Notoriety.Gray,
     API.Notoriety.Criminal,
@@ -104,17 +105,22 @@ def has_hostile_nearby():
     enemy = API.NearestMobile(HOSTILE_NOTORIETIES, SCAN_RANGE)
     return enemy is not None
 
+def pull_followers():
+    """Use the ball / command to pull pets in and set them to guard."""
+    API.UseType(0xe2e, 2000)
+    API.Pause(1)
+    API.Msg("all guard me")
+    API.SysMsg("Pulled followers", 68)
+
 API.SysMsg(f"Waypoint run started ({len(WAYPOINTS)} points)", 1150)
 if SCAN_HOSTILES:
     API.SysMsg(f"Hostile scan ON – range {SCAN_RANGE}", 68)
+API.SysMsg(f"Pull pets mode: {PULL_PETS_MODE}", 68)
 
 while not API.StopRequested and WAYPOINTS:
     API.ProcessCallbacks()
     now = time.time()
-    
 
-    
-    
     if now - last_grab_time >= GRAB_DELAY:
         API.Msg("[grab")
         last_grab_time = time.time()
@@ -126,6 +132,8 @@ while not API.StopRequested and WAYPOINTS:
         if not was_waiting_for_clear:
             API.SysMsg("Hostile detected – holding position", 33)
             was_waiting_for_clear = True
+            if PULL_PETS_MODE == "hostile":
+                pull_followers()
         time.sleep(0.5)
         continue
     else:
@@ -139,18 +147,17 @@ while not API.StopRequested and WAYPOINTS:
         if API.Pathfinding():
             API.CancelPathfinding()
         API.SysMsg(f"Route complete – idling {IDLE_SECONDS}s", 68)
-        
-        #Pull pets 
-        if PULL_PETS:
-            API.UseType(0xe2e, 2000)
-            API.Pause(1)
-            API.Msg("all guard me")
+
+        if PULL_PETS_MODE == "end":
+            pull_followers()
+
         idle_end = time.time() + IDLE_SECONDS
         while not API.StopRequested and time.time() < idle_end:
             API.ProcessCallbacks()
             if has_hostile_nearby():
                 break
             time.sleep(0.05)
+
         wp_index = 0
         stuck_count = 0
         offset_idx = 0
