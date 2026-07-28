@@ -1,11 +1,26 @@
 import API
 import time
 
-HEAL_PERCENT = 92
-CHECK_DELAY = 0.25
+# ==========================================================
+# Smart Keep Alive – Options
+# ==========================================================
 
-CURE_SPELL = "Cleanse by Fire"
-HEAL_SPELL = "Greater Heal"
+# ----- Toggles (True = enabled) -----
+HEAL_SELF        = False
+CURE_SELF        = False
+HEAL_PETS        = False
+CURE_PETS        = False
+RESURRECT_PETS   = True
+REMOVE_CURSE     = False
+
+# ----- Settings -----
+HEAL_PERCENT     = 92          # heal when HP% is at or below this
+CHECK_DELAY      = 0.25
+CURE_SPELL       = "Cleanse by Fire"
+HEAL_SPELL       = "Greater Heal"
+RES_GUMP_ID      = 0x04DA72C0  # resurrection confirmation gump
+
+# ==========================================================
 
 pet1_serial = 0
 pet2_serial = 0
@@ -20,15 +35,31 @@ def mobile_hp_percent(mobile):
         return 100
     return (mobile.Hits * 100.0) / mobile.HitsMax
 
+def resurrect_pet(pet_serial):
+    """Cast Resurrection on a dead pet and confirm the gump."""
+    API.CastSpell("Resurrection")
+    if not API.WaitForTarget(timeout=3):
+        return False
+    API.Target(pet_serial)
 
-API.SysMsg("Smart Keep Alive Started")
+    # Wait for the confirmation gump
+    timeout = time.time() + 5
+    while not API.HasGump(RES_GUMP_ID) and time.time() < timeout:
+        API.Pause(0.1)
+
+    if API.HasGump(RES_GUMP_ID):
+        API.ReplyGump(1, RES_GUMP_ID)
+        API.SysMsg("Resurrected pet", 68)
+        return True
+    return False
+
+API.SysMsg("Smart Keep Alive Started", 68)
 
 # Select companions
 API.Msg("Target companion #1")
 pet1_serial = API.RequestTarget(timeout=8)
 API.Msg("Target companion #2")
 pet2_serial = API.RequestTarget(timeout=8)
-
 
 while not API.StopRequested:
     API.ProcessCallbacks()
@@ -37,50 +68,63 @@ while not API.StopRequested:
         API.Pause(CHECK_DELAY)
         continue
 
-    # Cure Poison (Self)
-    if API.Player.IsPoisoned:
+    # ----- Cure Poison (Self) -----
+    if CURE_SELF and API.Player.IsPoisoned:
         API.CastSpell(CURE_SPELL)
         API.WaitForTarget()
         API.TargetSelf()
         continue
 
-    # Heal Self
-    if hp_percent() <= HEAL_PERCENT:
+    # ----- Heal Self -----
+    if HEAL_SELF and hp_percent() <= HEAL_PERCENT:
         API.CastSpell(HEAL_SPELL)
         API.WaitForTarget()
         API.TargetSelf()
         continue
 
-    # Pet Heals
+    # ----- Pet care -----
     for pet_serial in [pet1_serial, pet2_serial]:
         if not pet_serial:
             continue
+
         pet = API.FindMobile(pet_serial)
-        if not pet or pet.IsDead:
+        if not pet:
             continue
 
-        if pet.IsPoisoned:
+        # Resurrect dead pet
+        if RESURRECT_PETS and pet.IsDead:
+            resurrect_pet(pet_serial)
+            continue
+
+        # Skip further pet actions if dead (and we didn't just res)
+        if pet.IsDead:
+            continue
+
+        # Cure pet
+        if CURE_PETS and pet.IsPoisoned:
             API.CastSpell(CURE_SPELL)
             API.WaitForTarget()
             API.Target(pet_serial)
             continue
 
-        if mobile_hp_percent(pet) <= HEAL_PERCENT:
+        # Heal pet
+        if HEAL_PETS and mobile_hp_percent(pet) <= HEAL_PERCENT:
             API.CastSpell(HEAL_SPELL)
             API.WaitForTarget()
             API.Target(pet_serial)
             continue
 
-    # Remove Curse
-    if (
+    # ----- Remove Curse (Self) -----
+    if REMOVE_CURSE and (
         API.BuffExists("Weaken")
         or API.BuffExists("Clumsy")
         or API.BuffExists("Feeblemind")
         or API.BuffExists("Curse")
-    ):        
+    ):
         API.CastSpell("Remove Curse")
         API.WaitForTarget()
         API.TargetSelf()
 
+    API.Pause(CHECK_DELAY)
 
 API.SysMsg("Smart Keep Alive Stopped")
