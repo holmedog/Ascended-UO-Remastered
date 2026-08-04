@@ -6,8 +6,8 @@ import time
 # ==========================================================
 
 # ----- Toggles (True = enabled) -----
-HEAL_SELF        = False
-CURE_SELF        = False
+HEAL_SELF        = True
+CURE_SELF        = True
 HEAL_PETS        = False
 CURE_PETS        = False
 RESURRECT_PETS   = True
@@ -50,6 +50,8 @@ def resurrect_pet(pet_serial):
     if API.HasGump(RES_GUMP_ID):
         API.ReplyGump(1, RES_GUMP_ID)
         API.SysMsg("Resurrected pet", 68)
+        API.Pause(0.1)
+        API.Msg("all guard me")
         return True
     return False
 

@@ -4,19 +4,19 @@ import time
 # ==========================================================
 # Options (edit these)
 # ==========================================================
-ARRIVE_DIST = 2            # when you consider yourself at the waypoint
+ARRIVE_DIST = 1            # when you consider yourself at the waypoint
 CAST_SPELL = False         # True = cast Chain Lightning at each stop
 STEP_DIST = 16             # if farther than this, take a mid-step
 LOOP_DELAY = 0.05          # throttle between pathing attempts
 STUCK_TIME = 1.5           # how long before considering yourself stuck
 STAY_TIME = 0              # pause at each waypoint (0 = no stop)
-IDLE_SECONDS = 8           # idle time at end of route
+IDLE_SECONDS = 4           # idle time at end of route
 MAX_STUCK_RETRIES = 6
 GRAB_DELAY = 2             # how often to send [grab
-SCAN_HOSTILES = True      #Stop on hostiles within SCAN_RANGE
+SCAN_HOSTILES = False       #Stop on hostiles within SCAN_RANGE
 SCAN_RANGE = 3
 
-PULL_PETS_MODE = "hostile"
+PULL_PETS_MODE = "never"
 # Pull followers mode:
 #   "end"     → only at the end of the route
 #   "hostile" → when a hostile is detected

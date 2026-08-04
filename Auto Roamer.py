@@ -235,7 +235,5 @@ while not API.StopRequested:
     if attack_enemy:
         API.Attack(attack_enemy.Serial)
 
-    if not API.PrimaryAbilityActive():
-        API.ToggleAbility("primary")
 
 API.SysMsg("Lone Wolf Hunt offline", 1150)

@@ -1,47 +1,16 @@
 import API
 
-THRESHOLD = 8  # tiles (Manhattan)
+GUMP = 0xAEBAA44B
 
-# Starting position
-last_x = API.Player.X
-last_y = API.Player.Y
-last_z = API.Player.Z
+buttons = [
+    100, 101, 102, 103, 104, 108, 109, 110, 105, 106, 111, 112, 113
+]
+       
+def wait_for_gump():
+    while not API.HasGump(GUMP):
+        API.Pause(0.1)
 
-# Store points as (x, y, z)
-points = [(last_x, last_y, last_z)]
-
-API.SysMsg(f"Waypoint recorder started. Threshold = {THRESHOLD}", 68)
-API.SysMsg(f"Start: ({last_x}, {last_y}, {last_z})", 68)
-
-try:
-    while not API.StopRequested:
-        current_x = API.Player.X
-        current_y = API.Player.Y
-        current_z = API.Player.Z
-
-        dist = abs(current_x - last_x) + abs(current_y - last_y)
-
-        if dist > THRESHOLD:
-            points.append((current_x, current_y, current_z))
-
-            API.SysMsg(
-                f"New waypoint ({len(points)}): ({current_x}, {current_y}, {current_z})  "
-                f"[{dist} tiles]",
-                53
-            )
-
-            last_x = current_x
-            last_y = current_y
-            last_z = current_z
-
-        API.Pause(0.25)
-
-finally:
-    # This runs when you stop the script
-    output_path = API.ScriptPath + "/waypoints.txt"
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        for x, y, z in points:
-            f.write(f"    ({x}, {y}, {z}),\n")
-
-    API.SysMsg(f"Saved {len(points)} waypoints → {output_path}", 68)
+for button in buttons:
+    for _ in range(2):
+        API.ReplyGump(button, GUMP)
+        wait_for_gump()  

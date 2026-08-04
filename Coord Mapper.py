@@ -1,6 +1,6 @@
 import API
 
-THRESHOLD = 6  # tiles (Manhattan)
+THRESHOLD = 7  # tiles (Manhattan)
 
 # Starting position
 last_x = API.Player.X

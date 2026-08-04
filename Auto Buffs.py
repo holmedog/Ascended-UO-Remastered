@@ -18,7 +18,7 @@ USE_REMOVE_CURSE      = True
 # ----- Timing / thresholds -----
 BUFF_CHECK_DELAY  = 0.35
 CONSECRATE_DELAY  = 7.0
-BLESS_DELAY       = 60.0
+BLESS_DELAY       = 20.0
 IMMOLATING_DELAY  = 7.5
 BO_DELAY          = 10.0
 HEAL_PERCENT      = 65          # only cast certain buffs if HP% is at or above this
@@ -82,6 +82,7 @@ while not API.StopRequested:
     # Blood Oath
     if USE_BLOOD_OATH and now - last_bo >= BO_DELAY:
         if hp_percent() >= HEAL_PERCENT:
+            API.UseType(0xeff , 2198 )
             API.CastSpell("Blood Oath")
             API.WaitForTarget()
             API.TargetSelf()
